@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -27,24 +28,28 @@ class _HomescreenState extends State<Homescreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5FA),
       body:
-          isLoading
+          isLoading || weather == null
               ? const Center(child: CircularProgressIndicator())
               : Column(
                 children: [
-                  Stack(
-                    children: [
-                      Positioned(
-                        top: -20,
-                        left: -30,
-                        child: CustomPaint(
-                          size: const Size(350, 250),
-                          painter: AbstractPainter(),
+                  SizedBox(
+                    height: 250,
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: -20,
+                          left: -30,
+                          child: CustomPaint(
+                            size: const Size(350, 250),
+                            painter: AbstractPainter(),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
-                  const SizedBox(height: 180),
+                  const SizedBox(height: 20),
 
                   Text(
                     weather!.cityName,
@@ -53,6 +58,8 @@ class _HomescreenState extends State<Homescreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+                  const SizedBox(height: 4),
 
                   Text(
                     weather!.description,
@@ -81,6 +88,8 @@ class _HomescreenState extends State<Homescreen> {
       var response = await http.get(url);
       if (response.statusCode == 200) {
         log('Weather Data: ${response.body}');
+        final data = jsonDecode(response.body);
+        return WeatherResponse.fromJson(data);
       }
     } catch (e) {
       log('Failed to fetch weather data');
@@ -128,13 +137,15 @@ class _HomescreenState extends State<Homescreen> {
 class AbstractPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()..color = const Color(0xFF2D2B55);
-    final paint2 = Paint()..color = const Color(0xFFF36C6C);
-    final paint3 = Paint()..color = const Color(0xFFF3B562);
+    final paint1 = Paint()..color = const Color.fromARGB(255, 167, 167, 180);
+    final paint2 = Paint()..color = const Color(0xFF2D2B55);
+    final paint3 = Paint()..color = const Color(0xFFF36C6C);
+    final paint4 = Paint()..color = const Color(0xFFF3B562);
 
     canvas.drawCircle(const Offset(220, 80), 100, paint1);
-    canvas.drawCircle(const Offset(100, 60), 70, paint3);
-    canvas.drawCircle(const Offset(80, 120), 80, paint2);
+    canvas.drawCircle(const Offset(100, 60), 70, paint2);
+    canvas.drawCircle(const Offset(80, 120), 80, paint3);
+    canvas.drawCircle(const Offset(200, 150), 50, paint4);
 
     // Drips
     canvas.drawRect(const Rect.fromLTWH(210, 140, 6, 60), paint1);
