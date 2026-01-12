@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:developer';
-
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:weatherapp/custom_painter.dart';
 import 'package:weatherapp/weathermode.dart';
 import 'constants.dart' as k;
 
@@ -14,26 +15,60 @@ class Homescreen extends StatefulWidget {
   State<Homescreen> createState() => _HomescreenState();
 }
 
-class _HomescreenState extends State<Homescreen> {
+class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
   WeatherResponse? weather;
   bool isLoading = true;
+
+  late AnimationController _animationController;
+  late Animation<Offset> _avatarSlide;
+  late Animation<Offset> _textfieldAnimation;
+
+  bool showSearch = false;
+  final TextEditingController _cityController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _getLocation();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _avatarSlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-1.2, 0),
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    _textfieldAnimation = Tween<Offset>(
+      begin: const Offset(1.2, 0),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _cityController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5FA),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body:
           isLoading || weather == null
               ? const Center(child: CircularProgressIndicator())
               : Column(
                 children: [
                   SizedBox(
-                    height: 250,
+                    height: 300,
                     width: double.infinity,
                     child: Stack(
                       children: [
@@ -49,35 +84,115 @@ class _HomescreenState extends State<Homescreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 50),
 
                   Text(
                     weather!.cityName,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.montserrat(
+                      textStyle: Theme.of(context).textTheme.displayLarge,
+                      fontSize: 40,
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
 
                   Text(
                     weather!.description,
-                    style: const TextStyle(color: Colors.grey),
+                    style: GoogleFonts.openSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      color: const Color.fromARGB(255, 154, 152, 152),
+                    ),
                   ),
 
                   const SizedBox(height: 10),
 
                   Text(
                     "${(weather!.temperature - 273.15).toStringAsFixed(1)}°C",
-                    style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.cinzelDecorative(
+                      fontSize: 64,
+                      color: const Color(0xFF2D2B55),
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  SizedBox(height: 40),
+                  SizedBox(
+                    height: 60,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SlideTransition(
+                          position: _avatarSlide,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                showSearch = true;
+                              });
+                              _animationController.forward();
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Color(0xFF2D2B55),
+                              child: Icon(Icons.search, color: Colors.amber),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (showSearch)
+                    Expanded(
+                      child: SlideTransition(
+                        position: _textfieldAnimation,
+                        child: TextField(
+                          controller: _cityController,
+                          decoration: InputDecoration(
+                            hintText: "Enter city name",
+                            filled: true,
+                            fillColor: Colors.grey.shade200,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.search),
+                              onPressed: _searchCity,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
     );
+  }
+
+  Future<void> _searchCity() async {
+    final cityName = _cityController.text.trim();
+    if (cityName.isEmpty) return;
+
+    setState(() => isLoading = true);
+
+    var uri = '${k.searchCity}q=$cityName&appid=${k.apiKey}';
+    var url = Uri.parse(uri);
+    var response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        weather = WeatherResponse.fromJson(data);
+        isLoading = false;
+      });
+    } else {
+      setState(() => isLoading = false);
+      log('Failed to find $cityName');
+    }
   }
 
   Future<WeatherResponse?> getCurrentCityWeather(Position position) async {
@@ -132,29 +247,4 @@ class _HomescreenState extends State<Homescreen> {
 
     return await Geolocator.getCurrentPosition();
   }
-}
-
-class AbstractPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()..color = const Color.fromARGB(255, 167, 167, 180);
-    final paint2 = Paint()..color = const Color(0xFF2D2B55);
-    final paint3 = Paint()..color = const Color(0xFFF36C6C);
-    final paint4 = Paint()..color = const Color(0xFFF3B562);
-
-    canvas.drawCircle(const Offset(220, 80), 100, paint1);
-    canvas.drawCircle(const Offset(100, 60), 70, paint2);
-    canvas.drawCircle(const Offset(80, 120), 80, paint3);
-    canvas.drawCircle(const Offset(200, 150), 50, paint4);
-
-    // Drips
-    canvas.drawRect(const Rect.fromLTWH(210, 140, 6, 60), paint1);
-    canvas.drawRect(const Rect.fromLTWH(225, 150, 6, 80), paint1);
-
-    canvas.drawRect(const Rect.fromLTWH(90, 130, 6, 50), paint2);
-    canvas.drawRect(const Rect.fromLTWH(105, 140, 6, 70), paint2);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
