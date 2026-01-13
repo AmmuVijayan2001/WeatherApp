@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:weatherapp/custom_painter.dart';
 import 'package:weatherapp/weathermode.dart';
 import 'constants.dart' as k;
@@ -60,6 +61,9 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    String formatteddate = DateFormat(
+      'dd MM yyyy , hh:mm a',
+    ).format(DateTime.now());
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body:
@@ -86,88 +90,71 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
 
                   const SizedBox(height: 50),
 
-                  Text(
-                    weather!.cityName,
-                    style: GoogleFonts.montserrat(
-                      textStyle: Theme.of(context).textTheme.displayLarge,
-                      fontSize: 40,
-                      color: const Color.fromARGB(255, 0, 0, 0),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    weather!.description,
-                    style: GoogleFonts.openSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w400,
-                      color: const Color.fromARGB(255, 154, 152, 152),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Text(
-                    "${(weather!.temperature - 273.15).toStringAsFixed(1)}°C",
-                    style: GoogleFonts.cinzelDecorative(
-                      fontSize: 64,
-                      color: const Color(0xFF2D2B55),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 40),
-                  SizedBox(
-                    height: 60,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SlideTransition(
-                          position: _avatarSlide,
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                showSearch = true;
-                              });
-                              _animationController.forward();
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: Color(0xFF2D2B55),
-                              child: Icon(Icons.search, color: Colors.amber),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              color: Colors.blueAccent,
+                              size: 35,
                             ),
+                            SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  weather!.cityName,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: const Color(0xFF2D2B55),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(width: 20),
+                                Text(
+                                  formatteddate,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF2D2B55),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          weather!.description,
+                          style: GoogleFonts.cinzelDecorative(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF2D2B55),
+                          ),
+                        ),
+                        Text(
+                          "${(weather!.temperature - 273.15).toStringAsFixed(1)}°C",
+                          style: GoogleFonts.cinzelDecorative(
+                            fontSize: 45,
+                            color: const Color(0xFF2D2B55),
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  if (showSearch)
-                    Expanded(
-                      child: SlideTransition(
-                        position: _textfieldAnimation,
-                        child: TextField(
-                          controller: _cityController,
-                          decoration: InputDecoration(
-                            hintText: "Enter city name",
-                            filled: true,
-                            fillColor: Colors.grey.shade200,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide.none,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.search),
-                              onPressed: _searchCity,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
     );
