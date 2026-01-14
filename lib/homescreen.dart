@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:weatherapp/custom_painter.dart';
 import 'package:weatherapp/weathermode.dart';
+import 'package:weatherapp/widgets/weatherInfo.dart';
 import 'constants.dart' as k;
 
 class Homescreen extends StatefulWidget {
@@ -21,8 +22,6 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
   bool isLoading = true;
 
   late AnimationController _animationController;
-  late Animation<Offset> _avatarSlide;
-  late Animation<Offset> _textfieldAnimation;
 
   bool showSearch = false;
   final TextEditingController _cityController = TextEditingController();
@@ -35,20 +34,6 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
-    );
-
-    _avatarSlide = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-1.2, 0),
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    _textfieldAnimation = Tween<Offset>(
-      begin: const Offset(1.2, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
   }
 
@@ -72,7 +57,7 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
               : Column(
                 children: [
                   SizedBox(
-                    height: 300,
+                    height: 250,
                     width: double.infinity,
                     child: Stack(
                       children: [
@@ -87,8 +72,6 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 50),
 
                   Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -127,30 +110,101 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
+                        SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 45),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                weather!.description,
+                                style: GoogleFonts.victorMono(
+                                  fontSize: 25,
+                                  color: const Color(0xFF2D2B55),
+                                ),
+                              ),
+                              Text(
+                                "${(weather!.temperature - 273.15).toStringAsFixed(1)}°C",
+                                style: GoogleFonts.cinzelDecorative(
+                                  fontSize: 60,
+                                  color: const Color(0xFF2D2B55),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    "Feels like ${(weather!.tempfeelslike - 273.15).toStringAsFixed(1)}°C",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      color: const Color.fromARGB(
+                                        255,
+                                        105,
+                                        105,
+                                        105,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        isLoading = true;
+                                      });
+                                      _getLocation();
+                                    },
+                                    child: Icon(
+                                      Icons.refresh,
+                                      color: Colors.blueAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-
+                  const SizedBox(height: 40),
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    padding: const EdgeInsets.all(20.0),
+                    child: GridView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 20,
+                            crossAxisSpacing: 20,
+                            childAspectRatio: 1.5,
+                          ),
                       children: [
-                        Text(
-                          weather!.description,
-                          style: GoogleFonts.cinzelDecorative(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF2D2B55),
-                          ),
+                        weatherInfoTile(
+                          imagePath: 'assets/humidity.png',
+                          label: 'Humidity',
+                          value: '${weather!.humidity}%',
+                          delay: 100,
                         ),
-                        Text(
-                          "${(weather!.temperature - 273.15).toStringAsFixed(1)}°C",
-                          style: GoogleFonts.cinzelDecorative(
-                            fontSize: 45,
-                            color: const Color(0xFF2D2B55),
-                            fontWeight: FontWeight.w700,
-                          ),
+                        weatherInfoTile(
+                          imagePath: 'assets/wind.png',
+                          label: 'Wind Speed',
+                          value: '${weather!.windSpeed} m/s',
+                          delay: 200,
+                        ),
+                        weatherInfoTile(
+                          imagePath: 'assets/max_temp.png',
+                          label: 'Max Temp',
+                          value:
+                              '${(weather!.max_temp - 273.15).toStringAsFixed(1)}°C',
+                          delay: 300,
+                        ),
+                        weatherInfoTile(
+                          imagePath: 'assets/min_temp.png',
+                          label: 'Min Temp',
+                          value:
+                              '${(weather!.min_temp - 273.15).toStringAsFixed(1)}°C',
+                          delay: 400,
                         ),
                       ],
                     ),
@@ -158,28 +212,6 @@ class _HomescreenState extends State<Homescreen> with TickerProviderStateMixin {
                 ],
               ),
     );
-  }
-
-  Future<void> _searchCity() async {
-    final cityName = _cityController.text.trim();
-    if (cityName.isEmpty) return;
-
-    setState(() => isLoading = true);
-
-    var uri = '${k.searchCity}q=$cityName&appid=${k.apiKey}';
-    var url = Uri.parse(uri);
-    var response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        weather = WeatherResponse.fromJson(data);
-        isLoading = false;
-      });
-    } else {
-      setState(() => isLoading = false);
-      log('Failed to find $cityName');
-    }
   }
 
   Future<WeatherResponse?> getCurrentCityWeather(Position position) async {
