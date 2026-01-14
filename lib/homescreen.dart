@@ -123,14 +123,6 @@ class _HomescreenState extends State<Homescreen> {
                                 color: const Color(0xFF2D2B55),
                               ),
                             ),
-                            Text(
-                              "${(weather.temperature - 273.15).toStringAsFixed(1)}°C",
-                              style: GoogleFonts.cinzelDecorative(
-                                fontSize: 60,
-                                color: const Color(0xFF2D2B55),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
                             Row(
                               children: [
                                 Text(
@@ -158,6 +150,14 @@ class _HomescreenState extends State<Homescreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                            Text(
+                              "${(weather.temperature - 273.15).toStringAsFixed(1)}°C",
+                              style: GoogleFonts.cinzelDecorative(
+                                fontSize: 60,
+                                color: const Color(0xFF2D2B55),
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         ),
